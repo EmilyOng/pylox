@@ -1,10 +1,15 @@
 from argparse import ArgumentParser
 
+from pylox.scanner import scan_tokens
+
 
 __PROMPT = "> "
 
+
 def run(source: str):
-    print(source)
+    tokens = scan_tokens(source)
+    for token in tokens:
+        print(token)
 
 
 def run_file(file_path: str):
@@ -24,14 +29,11 @@ def run_interactive():
 
 
 if __name__ == "__main__":
-    parser = ArgumentParser(
-        prog="pylox",
-        description="A tree-walk interpreter for Lox"
-    )
+    parser = ArgumentParser(prog="pylox", description="A tree-walk interpreter for Lox")
     parser.add_argument("-f", "--file", required=False)
     parser.add_argument("-i", "--interactive", action="store_true", default=True)
     args = parser.parse_args()
-    
+
     if args.file is not None:
         run_file(args.file)
     else:
