@@ -6,6 +6,25 @@ from pylox.token_type import TokenType
 
 
 class Scanner:
+    __RESERVED_KEYWORDS = {
+        "and": TokenType.AND,
+        "class": TokenType.CLASS,
+        "else": TokenType.ELSE,
+        "false": TokenType.FALSE,
+        "fun": TokenType.FUN,
+        "for": TokenType.FOR,
+        "if": TokenType.IF,
+        "nil": TokenType.NIL,
+        "or": TokenType.OR,
+        "print": TokenType.PRINT,
+        "return": TokenType.RETURN,
+        "super": TokenType.SUPER,
+        "this": TokenType.THIS,
+        "true": TokenType.TRUE,
+        "var": TokenType.VAR,
+        "while": TokenType.WHILE,
+    }
+
     def __init__(self, source: str):
         self.__source = source
 
@@ -21,11 +40,10 @@ class Scanner:
     def __is_at_end(self) -> bool:
         return self.__current >= len(self.__source)
 
-    def __peek(self) -> Optional[str]:
-        # Performs one-character lookahead but does not consume
-        # the character.
-        if not self.__is_at_end():
-            return self.__source[self.__current]
+    def __peek(self, lookahead: int = 0) -> Optional[str]:
+        # Performs lookahead but does not consume the character.
+        if self.__current + lookahead < len(self.__source):
+            return self.__source[self.__current + lookahead]
 
         return None
 
@@ -34,7 +52,7 @@ class Scanner:
         self.__tokens.append(Token(token_type, lexeme, literal, self.__line))
 
     def __match(self, expected: str) -> bool:
-        if self.__peek() == expected:
+        if (not self.__is_at_end()) and self.__peek() == expected:
             self.__advance()
             return True
 
@@ -57,6 +75,27 @@ class Scanner:
 
         # Trim the surrounding quotes
         return self.__source[self.__start + 1 : self.__current - 1]
+
+    def __match_number(self) -> float:
+        while (not self.__is_at_end()) and self.__peek().isdigit():
+            self.__advance()
+
+        # Locate the fractional part.
+        if (not self.__is_at_end()) and self.__peek() == ".":
+            next = self.__peek(1)
+            if next is not None and next.isdigit():
+                self.__advance()
+
+                while (not self.__is_at_end()) and self.__peek().isdigit():
+                    self.__advance()
+
+        return float(self.__source[self.__start : self.__current])
+
+    def __match_identifier(self) -> str:
+        while (not self.__is_at_end()) and self.__peek().isalnum():
+            self.__advance()
+
+        return self.__source[self.__start : self.__current]
 
     def __scan_token(self) -> None:
         token = self.__source[self.__current]
@@ -84,25 +123,21 @@ class Scanner:
             case "*":
                 self.__add_token(TokenType.STAR)
             case "!":
-                if self.__match("="):
-                    self.__add_token(TokenType.BANG_EQUAL)
-                else:
-                    self.__add_token(TokenType.BANG)
+                self.__add_token(
+                    TokenType.BANG_EQUAL if self.__match("=") else TokenType.BANG
+                )
             case "=":
-                if self.__match("="):
-                    self.__add_token(TokenType.EQUAL_EQUAL)
-                else:
-                    self.__add_token(TokenType.EQ)
+                self.__add_token(
+                    TokenType.EQUAL_EQUAL if self.__match("=") else TokenType.EQUAL
+                )
             case "<":
-                if self.__match("="):
-                    self.__add_token(TokenType.LESS_EQUAL)
-                else:
-                    self.__add_token(TokenType.LESS)
+                self.__add_token(
+                    TokenType.LESS_EQUAL if self.__match("=") else TokenType.LESS
+                )
             case ">":
-                if self.__match("="):
-                    self.__add_token(TokenType.GREATER_EQUAL)
-                else:
-                    self.__add_token(TokenType.GREATER)
+                self.__add_token(
+                    TokenType.GREATER_EQUAL if self.__match("=") else TokenType.GREATER
+                )
             case "/":
                 if self.__match("/"):
                     # A comment goes until the end of line.
@@ -113,12 +148,22 @@ class Scanner:
             case '"':
                 self.__add_token(TokenType.STRING, self.__match_string())
             case " " | "\r" | "\t":
-                return None
+                return
             case "\n":
                 self.__line += 1
-                return None
-
-        Reporter.report_error(self.__line, token, "Unexpected character.")
+                return
+            case _:
+                if token.isdigit():
+                    self.__add_token(TokenType.NUMBER, self.__match_number())
+                elif token.isalpha():
+                    lexeme = self.__match_identifier()
+                    token_type = Scanner.__RESERVED_KEYWORDS.get(lexeme)
+                    if token_type is None:
+                        self.__add_token(TokenType.IDENTIFIER)
+                    else:
+                        self.__add_token(token_type)
+                else:
+                    Reporter.report_error(self.__line, token, "Unexpected character.")
 
     def scan_tokens(self) -> List[Token]:
         while not self.__is_at_end():

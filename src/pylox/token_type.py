@@ -30,7 +30,7 @@ class TokenType(StrEnum):
     STRING = auto()
     NUMBER = auto()
 
-    # Keywords.
+    # Keywords
     AND = auto()
     CLASS = auto()
     ELSE = auto()
