@@ -1,13 +1,26 @@
 from argparse import ArgumentParser
 
 
+__PROMPT = "> "
+
+def run(source: str):
+    print(source)
+
+
 def run_file(file_path: str):
     with open(file_path, "r") as file:
-        pass
+        run(file.readlines())
 
 
 def run_interactive():
-    pass
+    while True:
+        try:
+            line = input(__PROMPT)
+        except (EOFError, KeyboardInterrupt):
+            break
+        if len(line) == 0:
+            break
+        run(line)
 
 
 if __name__ == "__main__":
