@@ -34,8 +34,8 @@ class Scanner:
 
         self.__tokens = []
 
-    def __advance(self) -> None:
-        self.__current += 1
+    def __advance(self, step: int = 1) -> None:
+        self.__current += step
 
     def __is_at_end(self) -> bool:
         return self.__current >= len(self.__source)
@@ -97,6 +97,27 @@ class Scanner:
 
         return self.__source[self.__start : self.__current]
 
+    def __match_comments(self) -> None:
+        if self.__match("/"):
+            # Match single-line `//` comments.
+            while (not self.__is_at_end()) and self.__peek() != "\n":
+                self.__advance()
+        elif self.__match("*"):
+            # Match multi-line `/* */` comments.
+            comment_blocks = 1
+            while comment_blocks > 0:
+                if self.__is_at_end():
+                    Reporter.report_error(self.__line, "", "Unterminated comment.")
+                    return
+                if self.__peek() == "/" and self.__peek(1) == "*":
+                    comment_blocks += 1
+                    self.__advance(2)
+                elif self.__peek() == "*" and self.__peek(1) == "/":
+                    comment_blocks -= 1
+                    self.__advance(2)
+                else:
+                    self.__advance()
+
     def __scan_token(self) -> None:
         token = self.__source[self.__current]
         self.__advance()
@@ -139,10 +160,8 @@ class Scanner:
                     TokenType.GREATER_EQUAL if self.__match("=") else TokenType.GREATER
                 )
             case "/":
-                if self.__match("/"):
-                    # A comment goes until the end of line.
-                    while (not self.__is_at_end()) and self.__peek() != "\n":
-                        self.__advance()
+                if self.__peek() == "/" or self.__peek() == "*":
+                    self.__match_comments()
                 else:
                     self.__add_token(TokenType.SLASH)
             case '"':
