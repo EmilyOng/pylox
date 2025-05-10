@@ -1,10 +1,11 @@
-from typing import List, Optional
+from typing import List
 
+from pylox.reporter import Reporter
 from pylox.token import Token
 from pylox.token_type import TokenType
 
 
-def scan_token(token: str) -> Optional[TokenType]:
+def scan_token(token: str, line: int) -> TokenType:
     match token:
         case "(":
             return TokenType.LEFT_PAREN
@@ -26,6 +27,7 @@ def scan_token(token: str) -> Optional[TokenType]:
             return TokenType.SEMICOLON
         case "*":
             return TokenType.STAR
+    Reporter.report_error(line, "", "Unexpected character")
 
 
 def scan_tokens(source: str) -> List[str]:
@@ -38,7 +40,7 @@ def scan_tokens(source: str) -> List[str]:
     while current < len(source):
         # Indicates the beginning of the next lexeme.
         start = current
-        token_type = scan_token(source[current])
+        token_type = scan_token(source[current], line)
         text = source[start : current + 1]
         tokens.append(Token(token_type, text, None, line))
 

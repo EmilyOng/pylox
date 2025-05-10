@@ -1,5 +1,7 @@
 from argparse import ArgumentParser
+import sys
 
+from pylox.reporter import Reporter
 from pylox.scanner import scan_tokens
 
 
@@ -16,6 +18,9 @@ def run_file(file_path: str):
     with open(file_path, "r") as file:
         run(file.readlines())
 
+        if Reporter.has_error:
+            sys.exit()
+
 
 def run_interactive():
     while True:
@@ -25,7 +30,9 @@ def run_interactive():
             break
         if len(line) == 0:
             break
+
         run(line)
+        Reporter.reset_error()
 
 
 if __name__ == "__main__":
@@ -36,5 +43,5 @@ if __name__ == "__main__":
 
     if args.file is not None:
         run_file(args.file)
-    else:
+    elif args.interactive:
         run_interactive()
