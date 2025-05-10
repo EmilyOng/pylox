@@ -2,15 +2,16 @@ from argparse import ArgumentParser
 import sys
 
 from pylox.reporter import Reporter
-from pylox.scanner import scan_tokens
+from pylox.scanner import Scanner
 
 
 __PROMPT = "> "
 
 
 def run(source: str):
-    tokens = scan_tokens(source)
-    for token in tokens:
+    scanner = Scanner(source)
+
+    for token in scanner.scan_tokens():
         print(token)
 
 

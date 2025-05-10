@@ -4,7 +4,7 @@ class Reporter:
     @staticmethod
     def report_error(line: int, where: str, message: str) -> str:
         Reporter.__has_error = True
-        return f"[line {line}] Error {where}: {message}"
+        print(f"[line {line}] Error {where}: {message}")
 
     @staticmethod
     def has_error() -> bool:
