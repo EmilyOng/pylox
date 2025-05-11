@@ -4,7 +4,16 @@ from dataclasses import dataclass
 from typing import List
 
 
-def define_classes() -> str:
+def __title_case_to_camel_case(title_case: str) -> str:
+    camel_case = ""
+    for i, letter in enumerate(title_case):
+        if letter.isupper() and i > 0:
+            camel_case += "_"
+        camel_case += letter.lower()
+    return camel_case
+
+
+def define_ast() -> str:
     @dataclass
     class ClassType:
         @dataclass
@@ -20,9 +29,6 @@ def define_classes() -> str:
         ast.ImportFrom(module="abc", names=[ast.alias(name="ABC")]),
         ast.ImportFrom(module="dataclasses", names=[ast.alias(name="dataclass")]),
         ast.ImportFrom(module="pylox.token", names=[ast.alias(name="Token")]),
-    ]
-    base_classes = [
-        ast.ClassDef(name="Expression", bases=[ast.Name(id="ABC")], body=[ast.Pass()])
     ]
 
     class_types: List[ClassType] = [
@@ -53,6 +59,9 @@ def define_classes() -> str:
         ),
     ]
 
+    base_classes = [
+        ast.ClassDef(name="Expression", bases=[ast.Name(id="ABC")], body=[ast.Pass()])
+    ]
     sub_classes = map(
         lambda class_type: ast.ClassDef(
             name=class_type.name,
@@ -71,13 +80,43 @@ def define_classes() -> str:
         ),
         class_types,
     )
+    visitor_classes = [
+        ast.ClassDef(
+            name="Visitor",
+            bases=[ast.Name(id="ABC")],
+            type_params=[ast.TypeVar(name="T")],
+            body=list(
+                map(
+                    lambda class_type: ast.fix_missing_locations(
+                        ast.FunctionDef(
+                            name=f"visit_{__title_case_to_camel_case(class_type.name)}",
+                            args=ast.arguments(
+                                args=[
+                                    ast.arg(arg="self"),
+                                    ast.arg(
+                                        arg="expression",
+                                        annotation=ast.Name(id=class_type.name),
+                                    ),
+                                ]
+                            ),
+                            returns=ast.Name(id="T"),
+                            body=[ast.Pass()],
+                        )
+                    ),
+                    class_types,
+                )
+            ),
+        )
+    ]
 
-    return ast.unparse(ast.Module(body=[*imports, *base_classes, *sub_classes]))
+    return ast.unparse(
+        ast.Module(body=[*imports, *base_classes, *sub_classes, *visitor_classes])
+    )
 
 
-def generate_classes(output_file: str) -> None:
+def generate_ast(output_file: str) -> None:
     with open(output_file, "w+") as file:
-        file.writelines(define_classes())
+        file.writelines(define_ast())
 
 
 if __name__ == "__main__":
@@ -85,4 +124,4 @@ if __name__ == "__main__":
     parser.add_argument("-o", "--output", required=True)
 
     args = parser.parse_args()
-    generate_classes(args.output)
+    generate_ast(args.output)
