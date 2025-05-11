@@ -26,9 +26,13 @@ def define_ast() -> str:
         property_types: List[PropertyType]
 
     imports = [
-        ast.ImportFrom(module="abc", names=[ast.alias(name="ABC")]),
+        ast.ImportFrom(module="__future__", names=[ast.alias(name="annotations")]),
+        ast.ImportFrom(
+            module="abc",
+            names=[ast.alias(name="ABC"), ast.alias(name="abstractmethod")],
+        ),
         ast.ImportFrom(module="dataclasses", names=[ast.alias(name="dataclass")]),
-        ast.ImportFrom(module="pylox.token", names=[ast.alias(name="Token")]),
+        ast.ImportFrom(module="pylox.tokens", names=[ast.alias(name="Token")]),
     ]
 
     class_types: List[ClassType] = [
@@ -44,7 +48,7 @@ def define_ast() -> str:
         ClassType(
             "GroupingExpression",
             "Expression",
-            [ClassType.PropertyType("expr", "Expression")],
+            [ClassType.PropertyType("expression", "Expression")],
         ),
         ClassType(
             "LiteralExpression", "Expression", [ClassType.PropertyType("value", "any")]
@@ -75,7 +79,35 @@ def define_ast() -> str:
                     ),
                     class_type.property_types,
                 )
-            ),
+            )
+            + [
+                ast.fix_missing_locations(
+                    ast.FunctionDef(
+                        name="accept",
+                        args=ast.arguments(
+                            args=[
+                                ast.arg(arg="self"),
+                                ast.arg(
+                                    arg="visitor",
+                                    annotation=ast.Name(id="Visitor[T]"),
+                                ),
+                            ]
+                        ),
+                        returns=ast.Name(id="T"),
+                        body=[
+                            ast.Return(
+                                value=ast.Call(
+                                    func=ast.Name(
+                                        f"visitor.visit_{__title_case_to_camel_case(class_type.name)}"
+                                    ),
+                                    args=[ast.Name(id="self")],
+                                )
+                            )
+                        ],
+                        type_params=[ast.TypeVar(name="T")],
+                    )
+                )
+            ],
             decorator_list=[ast.Name(id="dataclass")],
         ),
         class_types,
@@ -101,6 +133,7 @@ def define_ast() -> str:
                             ),
                             returns=ast.Name(id="T"),
                             body=[ast.Pass()],
+                            decorator_list=[ast.Name(id="abstractmethod")],
                         )
                     ),
                     class_types,

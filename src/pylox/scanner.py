@@ -1,7 +1,7 @@
 from typing import List, Optional
 
 from pylox.reporter import Reporter
-from pylox.token import Token
+from pylox.tokens import Token
 from pylox.token_type import TokenType
 
 
