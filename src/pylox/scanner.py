@@ -166,6 +166,10 @@ class Scanner:
                     self.__add_token(TokenType.SLASH)
             case '"':
                 self.__add_token(TokenType.STRING, self.__match_string())
+            case "?":
+                self.__add_token(TokenType.QUESTION_MARK)
+            case ":":
+                self.__add_token(TokenType.COLON)
             case " " | "\r" | "\t":
                 return
             case "\n":

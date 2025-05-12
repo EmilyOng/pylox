@@ -61,6 +61,15 @@ def define_ast() -> str:
                 ClassType.PropertyType("right", "Expression"),
             ],
         ),
+        ClassType(
+            "TernaryExpression",
+            "Expression",
+            [
+                ClassType.PropertyType("conditional_expression", "Expression"),
+                ClassType.PropertyType("true_expression", "Expression"),
+                ClassType.PropertyType("false_expression", "Expression"),
+            ],
+        ),
     ]
 
     base_classes = [

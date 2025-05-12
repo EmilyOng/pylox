@@ -5,6 +5,7 @@ from pylox.expression import (
     Expression,
     GroupingExpression,
     LiteralExpression,
+    TernaryExpression,
     UnaryExpression,
 )
 from pylox.reporter import ParseException, Reporter
@@ -83,7 +84,6 @@ class Parser:
 
     def __comma(self) -> Expression:
         # comma       → equality ( "," equality )* ;
-
         expression = self.__equality()
 
         while self.__match(TokenType.COMMA):
@@ -94,19 +94,32 @@ class Parser:
         return expression
 
     def __equality(self) -> Expression:
-        # equality       → comparison ( ( "!=" | "==" ) comparison )* ;
-        expression = self.__comparison()
+        # equality       → ternary ( ( "!=" | "==" ) ternary )* ;
+        expression = self.__ternary()
 
         while self.__match(TokenType.BANG_EQUAL, TokenType.EQUAL_EQUAL):
             operator = self.__previous()
-            right = self.__comparison()
+            right = self.__ternary()
             expression = BinaryExpression(expression, operator, right)
+
+        return expression
+
+    def __ternary(self) -> Expression:
+        # ternary       → comparison ( "?" comparison ":" comparison)* ;
+        expression = self.__comparison()
+
+        while self.__match(TokenType.QUESTION_MARK):
+            true_expression = self.__comparison()
+            self.__consume(TokenType.COLON, "Expect ':' after expression.")
+            false_expression = self.__comparison()
+            expression = TernaryExpression(
+                expression, true_expression, false_expression
+            )
 
         return expression
 
     def __comparison(self) -> Expression:
         # comparison     → term ( ( ">" | ">=" | "<" | "<=" ) term )* ;
-
         expression = self.__term()
 
         while self.__match(
@@ -123,7 +136,6 @@ class Parser:
 
     def __term(self) -> Expression:
         # term           → factor ( ( "-" | "+" ) factor )* ;
-
         expression = self.__factor()
 
         while self.__match(TokenType.MINUS, TokenType.PLUS):
@@ -135,7 +147,6 @@ class Parser:
 
     def __factor(self) -> Expression:
         # factor         → unary ( ( "/" | "*" ) unary )* ;
-
         expression = self.__unary()
 
         while self.__match(TokenType.SLASH, TokenType.STAR):
@@ -147,7 +158,6 @@ class Parser:
 
     def __unary(self) -> Expression:
         # unary          → ( "!" | "-" ) unary | primary ;
-
         if self.__match(TokenType.BANG, TokenType.MINUS):
             operator = self.__previous()
             right = self.__unary()
@@ -158,7 +168,6 @@ class Parser:
     def __primary(self) -> Expression:
         # primary        → NUMBER | STRING | "true" | "false" | "nil"
         #                  | "(" expression ")" ;
-
         if self.__match(TokenType.FALSE):
             return LiteralExpression(False)
         elif self.__match(TokenType.TRUE):

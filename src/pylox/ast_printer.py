@@ -4,6 +4,7 @@ from pylox.expression import (
     Expression,
     GroupingExpression,
     LiteralExpression,
+    TernaryExpression,
     UnaryExpression,
     Visitor,
 )
@@ -32,3 +33,13 @@ class AstPrinter(Visitor[str]):
 
     def visit_unary_expression(self, expression: UnaryExpression) -> str:
         return self.parenthesize(expression.operator.lexeme, [expression.right])
+
+    def visit_ternary_expression(self, expression: TernaryExpression) -> str:
+        return self.parenthesize(
+            "?:",
+            [
+                expression.conditional_expression,
+                expression.true_expression,
+                expression.false_expression,
+            ],
+        )

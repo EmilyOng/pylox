@@ -43,6 +43,16 @@ class UnaryExpression(Expression):
         return visitor.visit_unary_expression(self)
 
 
+@dataclass
+class TernaryExpression(Expression):
+    conditional_expression: Expression
+    true_expression: Expression
+    false_expression: Expression
+
+    def accept[T](self, visitor: Visitor[T]) -> T:
+        return visitor.visit_ternary_expression(self)
+
+
 class Visitor[T](ABC):
     @abstractmethod
     def visit_binary_expression(self, expression: BinaryExpression) -> T:
@@ -58,4 +68,8 @@ class Visitor[T](ABC):
 
     @abstractmethod
     def visit_unary_expression(self, expression: UnaryExpression) -> T:
+        pass
+
+    @abstractmethod
+    def visit_ternary_expression(self, expression: TernaryExpression) -> T:
         pass
