@@ -78,9 +78,23 @@ class Parser:
             self.__advance()
 
     def __expression(self) -> Expression:
-        return self.__equality()
+        # expression     → comma
+        return self.__comma()
+
+    def __comma(self) -> Expression:
+        # comma       → equality ( "," equality )* ;
+
+        expression = self.__equality()
+
+        while self.__match(TokenType.COMMA):
+            operator = self.__previous()
+            right = self.__comma()
+            expression = BinaryExpression(expression, operator, right)
+
+        return expression
 
     def __equality(self) -> Expression:
+        # equality       → comparison ( ( "!=" | "==" ) comparison )* ;
         expression = self.__comparison()
 
         while self.__match(TokenType.BANG_EQUAL, TokenType.EQUAL_EQUAL):
@@ -91,6 +105,8 @@ class Parser:
         return expression
 
     def __comparison(self) -> Expression:
+        # comparison     → term ( ( ">" | ">=" | "<" | "<=" ) term )* ;
+
         expression = self.__term()
 
         while self.__match(
@@ -106,6 +122,8 @@ class Parser:
         return expression
 
     def __term(self) -> Expression:
+        # term           → factor ( ( "-" | "+" ) factor )* ;
+
         expression = self.__factor()
 
         while self.__match(TokenType.MINUS, TokenType.PLUS):
@@ -116,6 +134,8 @@ class Parser:
         return expression
 
     def __factor(self) -> Expression:
+        # factor         → unary ( ( "/" | "*" ) unary )* ;
+
         expression = self.__unary()
 
         while self.__match(TokenType.SLASH, TokenType.STAR):
@@ -126,6 +146,8 @@ class Parser:
         return expression
 
     def __unary(self) -> Expression:
+        # unary          → ( "!" | "-" ) unary | primary ;
+
         if self.__match(TokenType.BANG, TokenType.MINUS):
             operator = self.__previous()
             right = self.__unary()
@@ -134,6 +156,9 @@ class Parser:
             return self.__primary()
 
     def __primary(self) -> Expression:
+        # primary        → NUMBER | STRING | "true" | "false" | "nil"
+        #                  | "(" expression ")" ;
+
         if self.__match(TokenType.FALSE):
             return LiteralExpression(False)
         elif self.__match(TokenType.TRUE):
