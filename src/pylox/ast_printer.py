@@ -7,8 +7,6 @@ from pylox.expression import (
     UnaryExpression,
     Visitor,
 )
-from pylox.token_type import TokenType
-from pylox.tokens import Token
 
 
 class AstPrinter(Visitor[str]):
@@ -34,14 +32,3 @@ class AstPrinter(Visitor[str]):
 
     def visit_unary_expression(self, expression: UnaryExpression) -> str:
         return self.parenthesize(expression.operator.lexeme, [expression.right])
-
-
-if __name__ == "__main__":
-    expression = BinaryExpression(
-        UnaryExpression(Token(TokenType.MINUS, "-", None, 1), LiteralExpression("123")),
-        Token(TokenType.STAR, "*", None, 1),
-        GroupingExpression(LiteralExpression(45.67)),
-    )
-
-    ast_printer = AstPrinter()
-    print(ast_printer.print(expression))

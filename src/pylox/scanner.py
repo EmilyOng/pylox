@@ -32,7 +32,7 @@ class Scanner:
         self.__current = 0
         self.__line = 1
 
-        self.__tokens = []
+        self.__tokens: List[Token] = []
 
     def __advance(self, step: int = 1) -> None:
         self.__current += step

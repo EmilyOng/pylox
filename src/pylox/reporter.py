@@ -1,3 +1,8 @@
+class ParseException(Exception):
+    def __init__(self):
+        super().__init__()
+
+
 class Reporter:
     __has_error = False
 
